@@ -16,9 +16,10 @@ namespace RealmEyeTracker.Controllers
         private const string baseUrl = "https://www.realmeye.com";
         private readonly HttpClient client;
         private readonly string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
-        private Regex itemTitleRegex = new Regex(@"(?<=class=""item"" title="")[\w\s.':?-]+");
-        private Regex itemIdSellRegex = new Regex(@"(?<=offers-to/sell/)-?\d+");
-        private Regex itemIdBuyRegex = new Regex(@"(?<=offers-to/buy/)-?\d+");
+        private Regex itemTitleRegex = new(@"(?<=class=""item"" title="")[\w\s.':?-]+");
+        private Regex itemIdSellRegex = new(@"(?<=offers-to/sell/)-?\d+");
+        private Regex itemIdBuyRegex = new(@"(?<=offers-to/buy/)-?\d+");
+        private Regex quantityRegex = new(@"\d+");
 
         public OfferController(HttpClient client)
         {
@@ -39,10 +40,50 @@ namespace RealmEyeTracker.Controllers
             var finalUrl = $"{baseUrl}/offers-to/{urlExtension}/{itemId}";
 
             var response = await client.GetAsync(finalUrl);
-
             var content = await response.Content.ReadAsStringAsync();
 
+            var offerRows = FindOfferRows(content, itemId, request.Selling);
+
             return Ok(content);
+        }
+
+        private List<Offer> FindOfferRows(string content, string itemId, bool isSelling)
+        {
+            var offers = new List<Offer>();
+
+            var targetBeginning = $"<tbody><tr>";
+            var startIndex = 0;
+
+            for (int i = 0; i < content.Length; i++)
+            {
+                var prediction = content.Substring(i, targetBeginning.Length);
+                if (prediction.Equals(targetBeginning))
+                {
+                    startIndex = i + targetBeginning.Length;
+                    break;
+                }
+            }
+
+            var targetEnd = "</tr>";
+            var counter = 0;
+
+            for (int i = startIndex; i < content.Length; i++)
+            {
+                if (counter == 15) break;
+                var prediction = content.Substring(i, targetEnd.Length);
+                if (prediction.Equals(targetEnd))
+                {
+                    var endIndex = i + targetEnd.Length;
+                    var offerHTML = content.Substring(startIndex, endIndex - startIndex);
+                    var offer = AssembleOffer(offerHTML, isSelling);
+                    offers.Add(offer);
+                    counter++;
+                    i = endIndex;
+                    startIndex = endIndex;
+                }
+            }
+
+            return offers;
         }
 
         [HttpGet]
@@ -137,6 +178,57 @@ namespace RealmEyeTracker.Controllers
             return currentOffers;
         }
 
+        private Offer AssembleOffer(string offerHTML, bool isSelling)
+        {
+            var offer = new Offer()
+            {
+                //AddedTime = FindAddedTime(offerHTML),
+                //OfferBy = FindOfferBy(offerHTML),
+                //SecondaryItemId = FindSecondaryItemId(offerHTML)
+            };
+            var quantities = FindQuantities(offerHTML);
 
+            if (isSelling)
+            {
+                offer.SellQuantity = quantities[0];
+                offer.BuyQuantity = quantities[1];
+            } else
+            {
+                offer.BuyQuantity = quantities[0];
+                offer.SellQuantity = quantities[1];
+            }
+
+            return offer; 
+        }
+
+        private List<int> FindQuantities(string offerHTML)
+        {
+            var quantities = new List<int>();
+            var targetBeginning = @"item-quantity-static"">";
+            var targetEnd = "</span>";
+
+            for (int i = 0; i < offerHTML.Length; i++)
+            {
+                if (quantities.Count == 2) break;
+                var predictionBeginning = offerHTML.Substring(i, targetBeginning.Length);
+                if (predictionBeginning.Equals(targetBeginning))
+                {
+                    int startIndex = i + targetBeginning.Length;
+                    for (int j = startIndex; j < offerHTML.Length; j++)
+                    {
+                        var predictionEnd = offerHTML.Substring(j, targetEnd.Length);
+                        if (predictionEnd.Equals(targetEnd))
+                        {
+                            var quantitySection = offerHTML.Substring(startIndex, j - startIndex);
+                            var match = quantityRegex.Match(quantitySection);
+                            var quantity = int.Parse(match.Value);
+                            quantities.Add(quantity);
+                            break;
+                        }
+                    }
+                }
+            }
+            return quantities;
+        }
     }
 }

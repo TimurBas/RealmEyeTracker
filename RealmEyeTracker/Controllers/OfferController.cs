@@ -183,7 +183,7 @@ namespace RealmEyeTracker.Controllers
             var offer = new Offer()
             {
                 AddedTime = FindAddedTime(offerHTML),
-                //OfferBy = FindOfferBy(offerHTML),
+                OfferBy = FindOfferBy(offerHTML),
                 //SecondaryItemId = FindSecondaryItemId(offerHTML)
             };
             var quantities = FindQuantities(offerHTML);
@@ -199,6 +199,37 @@ namespace RealmEyeTracker.Controllers
             }
 
             return offer; 
+        }
+
+        private string FindOfferBy(string offerHTML)
+        {
+            var targetBeginning = @"</a></td>";
+            var endIndex = 0;
+
+            for (int i = 0; i < offerHTML.Length; i++)
+            {
+                var prediction = offerHTML.Substring(i, targetBeginning.Length);
+                if (prediction.Equals(targetBeginning))
+                {
+                    endIndex = i;
+                    break;
+                }
+            }
+
+            var targetEnd = @">";
+            var startIndex = 0;
+
+            for (int i = endIndex; i < offerHTML.Length; i--)
+            {
+                var prediction = offerHTML.Substring(i, targetEnd.Length);
+                if (prediction.Equals(targetEnd))
+                {
+                    startIndex = i + 1;
+                    break;
+                }
+            }
+
+            return offerHTML.Substring(startIndex, endIndex - startIndex);
         }
 
         private string FindAddedTime(string offerHTML)
@@ -230,7 +261,6 @@ namespace RealmEyeTracker.Controllers
             }
 
             return offerHTML.Substring(startIndex, endIndex - startIndex);
-
         }
 
         private List<int> FindQuantities(string offerHTML)

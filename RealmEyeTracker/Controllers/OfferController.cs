@@ -20,6 +20,7 @@ namespace RealmEyeTracker.Controllers
         private Regex itemIdSellRegex = new(@"(?<=offers-to/sell/)-?\d+");
         private Regex itemIdBuyRegex = new(@"(?<=offers-to/buy/)-?\d+");
         private Regex quantityRegex = new(@"\d+");
+        private Regex secondaryItemIdRegex = new(@"(?<=data-item="")\d+");
 
         public OfferController(HttpClient client)
         {
@@ -28,7 +29,7 @@ namespace RealmEyeTracker.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<string>> GetOffer(Request request)
+        public async Task<ActionResult<List<Offer>>> GetOffer(Request request)
         {
             string urlExtension;
             if (request.Selling) urlExtension = "sell";
@@ -44,7 +45,7 @@ namespace RealmEyeTracker.Controllers
 
             var offerRows = FindOfferRows(content, itemId, request.Selling);
 
-            return Ok(content);
+            return Ok(offerRows);
         }
 
         private List<Offer> FindOfferRows(string content, string itemId, bool isSelling)
@@ -75,7 +76,7 @@ namespace RealmEyeTracker.Controllers
                 {
                     var endIndex = i + targetEnd.Length;
                     var offerHTML = content.Substring(startIndex, endIndex - startIndex);
-                    var offer = AssembleOffer(offerHTML, isSelling);
+                    var offer = AssembleOffer(offerHTML, isSelling, itemId);
                     offers.Add(offer);
                     counter++;
                     i = endIndex;
@@ -178,13 +179,14 @@ namespace RealmEyeTracker.Controllers
             return currentOffers;
         }
 
-        private Offer AssembleOffer(string offerHTML, bool isSelling)
+        private Offer AssembleOffer(string offerHTML, bool isSelling, string itemId)
         {
             var offer = new Offer()
             {
+                MainItemId = itemId,
                 AddedTime = FindAddedTime(offerHTML),
                 OfferBy = FindOfferBy(offerHTML),
-                //SecondaryItemId = FindSecondaryItemId(offerHTML)
+                SecondaryItemId = FindSecondaryItemId(offerHTML)
             };
             var quantities = FindQuantities(offerHTML);
 
@@ -199,6 +201,48 @@ namespace RealmEyeTracker.Controllers
             }
 
             return offer; 
+        }
+
+        private string FindSecondaryItemId(string offerHTML)
+        {
+            var rowHTML = FindRowHTML(offerHTML, 2);
+            var match = secondaryItemIdRegex.Match(rowHTML);
+            return match.Value;
+        }
+
+        private string FindRowHTML(string offerHTML, int v)
+        {
+            var targetBeginning = @"<td>";
+            var startIndex = 0;
+            var counter = 0;
+
+            for (int i = 0; i < offerHTML.Length; i++)
+            {
+                var prediction = offerHTML.Substring(i, targetBeginning.Length);
+                if (prediction.Equals(targetBeginning))
+                {
+                    counter++;
+                    if (counter == v) {
+                        startIndex = i + targetBeginning.Length;
+                        break;
+                    }
+                }
+            }
+
+            var targetEnd = @"</td>";
+            var endIndex = 0;
+
+            for (int i = startIndex; i < offerHTML.Length; i++)
+            {
+                var prediction = offerHTML.Substring(i, targetEnd.Length);
+                if (prediction.Equals(targetEnd))
+                {
+                    endIndex = i;
+                    break;
+                }
+            }
+
+            return offerHTML.Substring(startIndex, endIndex - startIndex);
         }
 
         private string FindOfferBy(string offerHTML)

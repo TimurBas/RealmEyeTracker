@@ -155,7 +155,7 @@ namespace RealmEyeTracker
             { "icemanskin", "3320" },
             { "santatricksterskin", "6874" },
             { "oryxmasrogueskin", "8319" },
-            { "oryxmasarcherskin", "8329" },
+            { "oryxmasarcherskin", "8320" },
             { "oryxmaswizardskin", "8321" },
             { "oryxmaspriestskin", "8322" },
             { "oryxmaswarriorskin", "8323" },

@@ -59,17 +59,27 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (isSelling.Equals("True"))
+        await Task.Run(async() =>
         {
-            var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = true });
-            offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+            while (true)
+            {
+                if (isSelling.Equals("True"))
+                {
+                    var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = true });
+                    offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+                }
+                else
+                {
+                    var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = false });
+                    offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+                }
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(500);
+            }
         }
-        else
-        {
-            var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = false });
-            offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+        );
 
-        }
+
     }
 
     private async Task CopyToClipboard(Offer offer)

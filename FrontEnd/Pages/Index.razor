@@ -1,0 +1,64 @@
+﻿@page "/"
+@inject NavigationManager NavManager
+@using FrontEnd.Models;
+
+<h3>Home</h3>
+
+<BlazoredTypeahead SearchMethod="AutoSearch" @bind-Value="selectedItem" Debounce="100">
+    <SelectedTemplate>
+        @context.ItemName
+    </SelectedTemplate>
+    <ResultTemplate>
+        <b>@context.ItemName</b>
+    </ResultTemplate>
+    <NotFoundTemplate>
+        Sorry, there weren't any search results.
+    </NotFoundTemplate>
+</BlazoredTypeahead>
+<button class="btn btn-primary" type="submit" style="margin-top: 20px;" @onclick="@(_ => Submit())">Submit</button>
+
+@code {
+    private List<Request> items;
+    private Request selectedItem;
+    private string selectedItemId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        items = LoadItems();
+    }
+
+    public List<Request> LoadItems()
+    {
+        return new List<Request>()
+    {
+            new Request()
+            {
+                ItemName = "Potion of Attack",
+                Selling = true,
+            },
+            new Request()
+            {
+                ItemName = "Potion of Life",
+                Selling = true,
+            }
+        };
+    }
+
+    private async Task<IEnumerable<Request>> AutoSearch(string searchItem)
+    {
+        return await Task.FromResult(items.Where(item => item.ItemName.ToLower().Contains(searchItem.ToLower())).ToList());
+    }
+
+    //public void Enter(KeyboardEventArgs e)
+    //{
+    //    if (e.Code == "Enter")
+    //    {
+    //        NavManager.NavigateTo($"/offers/{selectedItem.Name.ToLower().Replace(" ", "")}/{selectedItem.Selling}");
+    //    }
+
+    public void Submit()
+    {
+        NavManager.NavigateTo($"/offers/{selectedItem.ItemName.ToLower().Replace(" ", "")}/{selectedItem.Selling}");
+
+    }
+}

@@ -1,0 +1,57 @@
+﻿@page "/offers/{itemName}/{isSelling}"
+@inject HttpClient Http
+@using FrontEnd.Models; 
+
+@if (offers == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item 1</th>
+                <th>Quantity</th>
+                <th>Item 2</th>
+                <th>Quantity</th>
+                <th>Offer By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var offer in offers)
+            {
+            <tr>
+                <td>@offer.MainItemId</td>
+                <td>@offer.SellQuantity</td>
+                <td>@offer.SecondaryItemId</td>
+                <td>@offer.BuyQuantity</td>
+                <td>@offer.OfferBy</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [ParameterAttribute]
+    public string itemName { get; set; }
+    [ParameterAttribute]
+    public string isSelling { get; set; }
+    private List<Offer> offers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (isSelling.Equals("True"))
+        {
+            var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = true });
+            offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+        }
+        else
+        {
+            var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = false });
+            offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+
+        }
+    }
+}

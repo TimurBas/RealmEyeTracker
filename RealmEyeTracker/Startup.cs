@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using System.Net;
+using Microsoft.AspNetCore.Cors;
 
 namespace RealmEyeTracker
 {
@@ -27,6 +27,8 @@ namespace RealmEyeTracker
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "RealmEyeTracker", Version = "v1" });
             });
 
+            services.AddCors();
+
             services.AddHttpClient();
 
             //var client = new WebClient();
@@ -44,6 +46,12 @@ namespace RealmEyeTracker
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "RealmEyeTracker v1"));
             }
 
+            app.UseCors(x => x
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .SetIsOriginAllowed(origin => true) // allow any origin
+                .AllowCredentials());
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
@@ -54,6 +62,8 @@ namespace RealmEyeTracker
             {
                 endpoints.MapControllers();
             });
+
+            
         }
     }
 }

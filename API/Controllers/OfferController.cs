@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Common.Models;
 using Common.Utilities;
+using System;
 
 namespace API.Controllers
 {
@@ -15,11 +16,11 @@ namespace API.Controllers
         private const string baseUrl = "https://www.realmeye.com";
         private readonly HttpClient client;
         private readonly string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
-        private Regex itemTitleRegex = new(@"(?<=class=""item"" title="")[\w\s.':?-]+");
-        private Regex itemIdSellRegex = new(@"(?<=offers-to/sell/)-?\d+");
-        private Regex itemIdBuyRegex = new(@"(?<=offers-to/buy/)-?\d+");
-        private Regex quantityRegex = new(@"\d+");
-        private Regex secondaryItemIdRegex = new(@"(?<=data-item="")\d+");
+        private readonly Regex itemTitleRegex = new(@"(?<=class=""item"" title="")[\w\s.':?-]+");
+        private readonly Regex itemIdSellRegex = new(@"(?<=offers-to/sell/)-?\d+");
+        private readonly Regex itemIdBuyRegex = new(@"(?<=offers-to/buy/)-?\d+");
+        private readonly Regex quantityRegex = new(@"\d+");
+        private readonly Regex secondaryItemIdRegex = new(@"(?<=data-item="")\d+");
 
         public OfferController(HttpClient client)
         {
@@ -65,21 +66,24 @@ namespace API.Controllers
             }
 
             var targetEnd = "</tr>";
-            var counter = 0;
 
             for (int i = startIndex; i < content.Length; i++)
             {
-                if (counter == 15) break;
-                var prediction = content.Substring(i, targetEnd.Length);
-                if (prediction.Equals(targetEnd))
+                try
                 {
-                    var endIndex = i + targetEnd.Length;
-                    var offerHTML = content.Substring(startIndex, endIndex - startIndex);
-                    var offer = AssembleOffer(offerHTML, isSelling, itemId);
-                    offers.Add(offer);
-                    counter++;
-                    i = endIndex;
-                    startIndex = endIndex;
+                    var prediction = content.Substring(i, targetEnd.Length);
+                    if (prediction.Equals(targetEnd))
+                    {
+                        var endIndex = i + targetEnd.Length;
+                        var offerHTML = content.Substring(startIndex, endIndex - startIndex);
+                        var offer = AssembleOffer(offerHTML, isSelling, itemId);
+                        offers.Add(offer);
+                        i = endIndex;
+                        startIndex = endIndex;
+                    }
+                } catch (Exception e)
+                {
+                    return offers;
                 }
             }
 
@@ -180,31 +184,33 @@ namespace API.Controllers
 
         private Offer AssembleOffer(string offerHTML, bool isSelling, string itemId)
         {
+            var quantities = FindQuantities(offerHTML);
+
             var offer = new Offer()
             {
-                MainItemId = itemId,
+                SellQuantity = quantities[0],
+                BuyQuantity = quantities[1],
                 AddedTime = FindAddedTime(offerHTML),
                 OfferBy = FindOfferBy(offerHTML),
-                SecondaryItemId = FindSecondaryItemId(offerHTML)
             };
-            var quantities = FindQuantities(offerHTML);
 
             if (isSelling)
             {
-                offer.SellQuantity = quantities[0];
-                offer.BuyQuantity = quantities[1];
-            } else
+                offer.MainItemId = itemId;
+                offer.SecondaryItemId = FindSecondaryItemId(offerHTML, 2);
+            }
+            else
             {
-                offer.BuyQuantity = quantities[0];
-                offer.SellQuantity = quantities[1];
+                offer.MainItemId = FindSecondaryItemId(offerHTML, 1);
+                offer.SecondaryItemId = itemId;
             }
 
             return offer; 
         }
 
-        private string FindSecondaryItemId(string offerHTML)
+        private string FindSecondaryItemId(string offerHTML, int v)
         {
-            var rowHTML = FindRowHTML(offerHTML, 2);
+            var rowHTML = FindRowHTML(offerHTML, v);
             var match = secondaryItemIdRegex.Match(rowHTML);
             return match.Value;
         }

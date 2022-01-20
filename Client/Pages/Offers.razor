@@ -13,11 +13,12 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Item 1</th>
+                <th>Selling</th>
                 <th>Quantity</th>
-                <th>Item 2</th>
+                <th>Buying</th>
                 <th>Quantity</th>
                 <th>Offer By</th>
+                <th>Message Person</th>
             </tr>
         </thead>
         <tbody>
@@ -29,19 +30,23 @@ else
                 <td>@Definitions.GetItemNameFromItemId(offer.SecondaryItemId)</td>
                 <td>@offer.BuyQuantity</td>
                 <td>@offer.OfferBy</td>
+                <td>
+                    <button class="btn btn-primary btn-sm" @onclick="(_ => CopyToClipboard(offer))">Copy to clipboard</button>
+                </td>
             </tr>
-                <button @onclick="(_ => CopyToClipboard(offer))"></button>
             }
         </tbody>
     </table>
 }
 
 @code {
-        [ParameterAttribute]
-        public string itemName { get; set; }
-        [ParameterAttribute]
-        public string isSelling { get; set; }
+    [ParameterAttribute]
+    public string itemName { get; set; }
+    [ParameterAttribute]
+    public string isSelling { get; set; }
     private List<Offer> offers;
+    private readonly string baseUrl = "https://api-realmeyetracker.azurewebsites.net";
+    private readonly string localHost = "https://localhost:44330";
 
     protected override async Task OnInitializedAsync()
     {
@@ -49,18 +54,11 @@ else
         {
             while (true)
             {
-                if (isSelling.Equals("True"))
-                {
-                    var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = true });
-                    offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
-                }
-                else
-                {
-                    var response = await Http.PostAsJsonAsync("https://localhost:44330/Offer", new Request { ItemName = itemName, Selling = false });
-                    offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
-                }
+                var response = await Http.PostAsJsonAsync($"{baseUrl}/Offer", new Request { ItemName = itemName, Selling = bool.Parse(isSelling) });
+                offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
+
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(500);
+                await Task.Delay(15000);
             }
         }
         );

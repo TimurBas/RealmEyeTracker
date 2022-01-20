@@ -1,64 +1,73 @@
 ﻿@page "/"
 @inject NavigationManager NavManager
-@using Common.Models;
-
-<h3>Home</h3>
+@inject IJSRuntime jsRuntime
+@using Common.Utilities;
 
 <BlazoredTypeahead SearchMethod="AutoSearch" @bind-Value="selectedItem" Debounce="100">
     <SelectedTemplate>
-        @context.ItemName
+        @context
     </SelectedTemplate>
     <ResultTemplate>
-        <b>@context.ItemName</b>
+        <b>@context</b>
     </ResultTemplate>
     <NotFoundTemplate>
         Sorry, there weren't any search results.
     </NotFoundTemplate>
 </BlazoredTypeahead>
+
+
+<label style="margin-top: 5px; margin-bottom: 5px">Which section do you want to see?</label>
+
+@foreach (var item in new string[] { "Selling", "Buying" })
+{
+    <div style="margin-top: 5px; margin-bottom: 5px">
+        <input type="radio" name="technology" id="@item" value="@item" @onchange="RadioSelection" checked=@(radioButtonValue.Equals(item,StringComparison.OrdinalIgnoreCase)) />
+        <label for="@item">@item</label>
+    </div>
+}
+
 <button class="btn btn-primary" type="submit" style="margin-top: 20px;" @onclick="@(_ => Submit())">Submit</button>
 
 @code {
-    private List<Request> items;
-    private Request selectedItem;
-    private string selectedItemId;
+    private List<string> items;
+    private string selectedItem;
+    private string radioButtonValue = "Selling";
 
     protected override async Task OnInitializedAsync()
     {
         items = LoadItems();
     }
 
-    public List<Request> LoadItems()
+    public List<string> LoadItems()
     {
-        return new List<Request>()
-{
-            new Request()
-            {
-                ItemName = "Potion of Attack",
-                Selling = true,
-            },
-            new Request()
-            {
-                ItemName = "Potion of Life",
-                Selling = true,
-            }
-        };
+        return Definitions.GetAllItemNames();
     }
 
-    private async Task<IEnumerable<Request>> AutoSearch(string searchItem)
+    private async Task<IEnumerable<string>> AutoSearch(string searchItem)
     {
-        return await Task.FromResult(items.Where(item => item.ItemName.ToLower().Contains(searchItem.ToLower())).ToList());
+        return await Task.FromResult(items.Where(item => item.ToLower().Contains(searchItem.ToLower())).ToList());
     }
 
-    //public void Enter(KeyboardEventArgs e)
-    //{
-    //    if (e.Code == "Enter")
-    //    {
-    //        NavManager.NavigateTo($"/offers/{selectedItem.Name.ToLower().Replace(" ", "")}/{selectedItem.Selling}");
-    //    }
-
-    public void Submit()
+    void RadioSelection(ChangeEventArgs args)
     {
-        NavManager.NavigateTo($"/offers/{selectedItem.ItemName.ToLower().Replace(" ", "")}/{selectedItem.Selling}");
+        if (!args.Value.ToString().Equals("Selling"))
+            radioButtonValue = "Buying";
+        else
+        {
+            radioButtonValue = "Selling";
+        }
+    }
 
+    public async Task Submit()
+    {
+        if (string.IsNullOrEmpty(selectedItem))
+        {
+            await jsRuntime.InvokeVoidAsync("alert", "Please input an item name");
+            return;
+        }
+        if (radioButtonValue.Equals("Selling"))
+            NavManager.NavigateTo($"/offers/{selectedItem.ToLower().Replace(" ", "")}/true");
+        else
+            NavManager.NavigateTo($"/offers/{selectedItem.ToLower().Replace(" ", "")}/false");
     }
 }

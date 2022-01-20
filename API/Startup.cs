@@ -1,3 +1,4 @@
+using App;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,7 @@ namespace API
             services.AddCors();
 
             services.AddHttpClient();
+            services.AddScoped<ApiService>();
 
             //var client = new WebClient();
             //client.Headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Mobile Safari/537.36";

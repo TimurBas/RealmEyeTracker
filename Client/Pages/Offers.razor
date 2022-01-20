@@ -1,7 +1,8 @@
 ﻿@page "/offers/{itemName}/{isSelling}"
 @inject HttpClient Http
 @inject IJSRuntime jsRuntime
-@using FrontEnd.Models;
+@using Common.Models; 
+@using Common.Utilities; 
 
 @if (offers == null)
 {
@@ -22,28 +23,13 @@ else
         <tbody>
             @foreach (var offer in offers)
             {
-                <tr>
-                    @if (Config.idToItemName.ContainsKey(offer.MainItemId))
-                    {
-                        <td>@Config.idToItemName[offer.MainItemId]</td>
-
-                    }
-                    else
-                    {
-                        <td>0</td>
-                    }
-                    <td>@offer.SellQuantity</td>
-                    @if (Config.idToItemName.ContainsKey(offer.SecondaryItemId))
-                    {
-                        <td>@Config.idToItemName[offer.SecondaryItemId]</td>
-                    }
-                    else
-                    {
-                        <td>0</td>
-                    }
-                    <td>@offer.BuyQuantity</td>
-                    <td>@offer.OfferBy</td>
-                </tr>
+            <tr>
+                <td>@Definitions.GetItemNameFromItemId(offer.MainItemId)</td>
+                <td>@offer.SellQuantity</td>
+                <td>@Definitions.GetItemNameFromItemId(offer.SecondaryItemId)</td>
+                <td>@offer.BuyQuantity</td>
+                <td>@offer.OfferBy</td>
+            </tr>
                 <button @onclick="(_ => CopyToClipboard(offer))"></button>
             }
         </tbody>
@@ -51,15 +37,15 @@ else
 }
 
 @code {
-    [ParameterAttribute]
-    public string itemName { get; set; }
-    [ParameterAttribute]
-    public string isSelling { get; set; }
+        [ParameterAttribute]
+        public string itemName { get; set; }
+        [ParameterAttribute]
+        public string isSelling { get; set; }
     private List<Offer> offers;
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.Run(async() =>
+        await Task.Run(async () =>
         {
             while (true)
             {
@@ -78,28 +64,11 @@ else
             }
         }
         );
-
-
     }
 
     private async Task CopyToClipboard(Offer offer)
     {
-        var message = $"/tell {offer.OfferBy} Hi, {offer.OfferBy}! I would like to buy {offer.SellQuantity} of your ";
-        if (Config.idToItemName.ContainsKey(offer.MainItemId))
-        {
-            message += $"{Config.idToItemName[offer.MainItemId]} for ";
-        } else
-        {
-            message += $"could not parse first item name for ";
-        }
-
-        if (Config.idToItemName.ContainsKey(offer.SecondaryItemId))
-        {
-            message += $"{offer.BuyQuantity} of my {Config.idToItemName[offer.SecondaryItemId]}.";
-        } else
-        {
-            message += $"could not parse secondary item name";
-        }
+        var message = $"/tell {offer.OfferBy} Hi, {offer.OfferBy}! I would like to buy {offer.SellQuantity} of your {Definitions.GetItemNameFromItemId(offer.MainItemId)} for {offer.BuyQuantity} of my {Definitions.GetItemNameFromItemId(offer.SecondaryItemId)}.";
 
         await jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", message);
     }

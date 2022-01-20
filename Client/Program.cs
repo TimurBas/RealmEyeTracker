@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.JSInterop;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace FrontEnd
+namespace Client
 {
     public class Program
     {
@@ -13,7 +12,7 @@ namespace FrontEnd
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
-            builder.Services.AddSingleton(services => (IJSInProcessRuntime)services.GetRequiredService<IJSRuntime>());
+
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
             await builder.Build().RunAsync();

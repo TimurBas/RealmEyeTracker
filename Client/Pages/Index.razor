@@ -1,6 +1,6 @@
 ﻿@page "/"
 @inject NavigationManager NavManager
-@using FrontEnd.Models;
+@using Common.Models;
 
 <h3>Home</h3>
 
@@ -30,7 +30,7 @@
     public List<Request> LoadItems()
     {
         return new List<Request>()
-    {
+{
             new Request()
             {
                 ItemName = "Potion of Attack",

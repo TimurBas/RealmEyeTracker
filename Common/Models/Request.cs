@@ -1,4 +1,4 @@
-﻿namespace FrontEnd.Models
+﻿namespace Common.Models
 {
     public class Request
     {

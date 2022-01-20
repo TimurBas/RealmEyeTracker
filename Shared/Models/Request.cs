@@ -1,4 +1,4 @@
-﻿namespace RealmEyeTracker
+﻿namespace Shared.Models
 {
     public class Request
     {

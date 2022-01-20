@@ -1,4 +1,4 @@
-﻿namespace RealmEyeTracker
+﻿namespace Common.Models
 {
     public class Offer
     {

@@ -1,13 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Common.Models;
+using Common.Utilities;
 
-namespace RealmEyeTracker.Controllers
+namespace API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
@@ -36,7 +35,7 @@ namespace RealmEyeTracker.Controllers
             else urlExtension = "buy";
 
             var convertedItemName = request.ItemName.ToLower().Replace(" ", "");
-            var itemId = Utilities.GetItemId(convertedItemName);
+            var itemId = Definitions.GetItemIdFromItemNameNoSpaces(convertedItemName);
 
             var finalUrl = $"{baseUrl}/offers-to/{urlExtension}/{itemId}";
 

@@ -1,4 +1,4 @@
-﻿namespace FrontEnd.Models
+﻿namespace Shared.Models
 {
     public class Offer
     {

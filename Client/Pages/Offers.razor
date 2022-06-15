@@ -54,7 +54,7 @@ else
         {
             while (true)
             {
-                var response = await Http.PostAsJsonAsync($"{baseUrl}/Offer", new Request { ItemName = itemName, Selling = bool.Parse(isSelling) });
+                var response = await Http.PostAsJsonAsync($"{localHost}/Offer", new Request { ItemName = itemName, Selling = bool.Parse(isSelling) });
                 offers = await response.Content.ReadFromJsonAsync<List<Offer>>();
 
                 await InvokeAsync(StateHasChanged);
